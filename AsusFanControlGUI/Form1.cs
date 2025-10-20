@@ -11,6 +11,7 @@ namespace AsusFanControlGUI
         Timer timer;
         NotifyIcon trayIcon;
         bool autoControlActive = false;
+        bool programmaticChange = false;
 
         public Form1()
         {
@@ -160,13 +161,17 @@ namespace AsusFanControlGUI
                 {
                     // Temperature exceeded threshold, turn on fan control
                     autoControlActive = true;
+                    programmaticChange = true;
                     checkBoxTurnOn.Checked = true;
+                    programmaticChange = false;
                 }
                 else if (currentTemp < threshold - 5 && autoControlActive) // 5 degree hysteresis
                 {
                     // Temperature dropped sufficiently below threshold, turn off fan control
                     autoControlActive = false;
+                    programmaticChange = true;
                     checkBoxTurnOn.Checked = false;
+                    programmaticChange = false;
                 }
             }
             else
@@ -212,8 +217,6 @@ namespace AsusFanControlGUI
             Properties.Settings.Default.fanSpeed = value;
             Properties.Settings.Default.Save();
 
-
-
             if (!checkBoxTurnOn.Checked)
                 value = 0;
 
@@ -232,6 +235,13 @@ namespace AsusFanControlGUI
 
         private void checkBoxTurnOn_CheckedChanged(object sender, EventArgs e)
         {
+            // If this is a programmatic change from auto control, don't interfere
+            if (programmaticChange)
+            {
+                setFanSpeed();
+                return;
+            }
+
             // If manual control is used while auto control is active, disable auto control
             if (autoControlActive)
             {
